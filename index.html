@@ -1124,6 +1124,16 @@ body{font-family:'Fredoka','Comic Sans MS',cursive;background:linear-gradient(18
         <button onclick="saveSetup()" style="flex:1;background:linear-gradient(135deg,#1a237e,#283593);color:white;border:none;padding:13px;border-radius:10px;cursor:pointer;font-weight:700;font-size:1em;">💾 Save Settings</button>
         <button id="testConnBtn" onclick="testConnection()" style="flex:1;background:linear-gradient(135deg,#FF9800,#E65100);color:white;border:none;padding:13px;border-radius:10px;cursor:pointer;font-weight:700;font-size:1em;">🔌 Test Connection</button>
       </div>
+      <div style="margin-top:20px;background:#e8f5e9;border:2px solid #4CAF50;border-radius:10px;padding:15px;">
+        <div style="font-weight:700;color:#1B5E20;margin-bottom:8px;">📦 Share with Students</div>
+        <div style="font-size:.9em;color:#2E7D32;margin-bottom:12px;">
+          After saving your settings above, click this button to download a <strong>new version of the game file</strong> with your credentials built-in.
+          Upload <em>that</em> file to GitHub — students who open it will <strong>automatically connect</strong> to your score bin. No setup needed on their end!
+        </div>
+        <button id="bakeDownloadBtn" onclick="bakeAndDownload()" style="width:100%;background:linear-gradient(135deg,#4CAF50,#2E7D32);color:white;border:none;padding:13px;border-radius:10px;cursor:pointer;font-weight:700;font-size:1em;">
+          📦 Bake Config &amp; Download for Students
+        </button>
+      </div>
       <div style="text-align:center;margin-top:15px;">
         <button onclick="closeSetupModal()" style="background:#eee;color:#555;border:none;padding:10px 25px;border-radius:8px;cursor:pointer;font-weight:600;">Close</button>
       </div>
@@ -2311,10 +2321,16 @@ document.addEventListener('touchend', _maybeStartMusic, true);
 // ═══════════════════════════════════════════════════════════════
 
 // ── CONFIG (teacher fills these in the setup screen) ──
+// BAKED-IN values (set by teacher using "Bake Config & Download" button)
+// These override localStorage so ALL users who open this file are auto-configured.
+const BAKED_API_KEY      = '';  // AUTO-FILLED BY TEACHER
+const BAKED_SCORES_BIN   = '';  // AUTO-FILLED BY TEACHER
+const BAKED_QUESTIONS_BIN= '';  // AUTO-FILLED BY TEACHER
+
 let JBIN = {
-  apiKey:     localStorage.getItem('tc_apiKey')     || '',
-  scoresBin:  localStorage.getItem('tc_scoresBin')  || '',
-  questionsBin: localStorage.getItem('tc_questionsBin') || ''
+  apiKey:      BAKED_API_KEY      || localStorage.getItem('tc_apiKey')      || '',
+  scoresBin:   BAKED_SCORES_BIN   || localStorage.getItem('tc_scoresBin')   || '',
+  questionsBin:BAKED_QUESTIONS_BIN|| localStorage.getItem('tc_questionsBin')|| ''
 };
 const JBIN_BASE = 'https://api.jsonbin.io/v3';
 
@@ -2505,6 +2521,55 @@ function saveSetup(){
   if(b) b.style.cursor = isConfigured()?'default':'pointer';
   setSyncBadge(isConfigured()?'ok':'unconfigured');
   alert(isConfigured() ? '✅ Setup saved! Scores will now sync live.' : '⚠️ API Key and Scores Bin are required.');
+}
+
+// ── BAKE CONFIG INTO FILE & DOWNLOAD ──
+// This generates a new HTML file with credentials hard-coded so ALL students
+// who open the file are automatically configured — no setup needed on their end.
+async function bakeAndDownload(){
+  const key  = document.getElementById('setup_apiKey').value.trim();
+  const sbin = document.getElementById('setup_scoresBin').value.trim();
+  const qbin = document.getElementById('setup_questionsBin').value.trim();
+  if(!key || !sbin){ alert('Please enter (and save) your API Key and Scores Bin ID first.'); return; }
+  const btn = document.getElementById('bakeDownloadBtn');
+  btn.disabled = true; btn.textContent = '⏳ Building file...';
+  try {
+    // Also push latest local questions to cloud before baking
+    if(qbin){
+      const q = loadQuestions();
+      await saveQuestionsToCloud(q);
+    }
+    // Read current file source
+    const res = await fetch(window.location.href);
+    let src = await res.text();
+    // Replace the three placeholder constants with real values
+    src = src.replace(
+      /const BAKED_API_KEY\s*=\s*'[^']*'/,
+      `const BAKED_API_KEY      = '${key.replace(/'/g,"\\'")}' `
+    );
+    src = src.replace(
+      /const BAKED_SCORES_BIN\s*=\s*'[^']*'/,
+      `const BAKED_SCORES_BIN   = '${sbin.replace(/'/g,"\\'")}' `
+    );
+    src = src.replace(
+      /const BAKED_QUESTIONS_BIN\s*=\s*'[^']*'/,
+      `const BAKED_QUESTIONS_BIN= '${qbin.replace(/'/g,"\\'")}' `
+    );
+    const blob = new Blob([src], {type:'text/html'});
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url;
+    a.download = 'TECTONIC_CLASH_LIVE_EDITION.html';
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a); URL.revokeObjectURL(url);
+    btn.textContent = '✅ Downloaded!';
+    setTimeout(()=>{ btn.textContent='📦 Bake Config & Download for Students'; btn.disabled=false; }, 3000);
+    alert('✅ File downloaded!\n\nUpload this new file to GitHub.\nEvery student who opens it will automatically connect to your score bin — no setup needed!');
+  } catch(e) {
+    alert('❌ Could not generate file: '+e.message+'\n\nTip: This only works when the game is opened from a server (GitHub Pages, etc.), not a local file:// path.');
+    btn.textContent = '📦 Bake Config & Download for Students';
+    btn.disabled = false;
+  }
 }
 async function autoCreateBins(){
   const key = document.getElementById('setup_apiKey').value.trim();
@@ -2879,12 +2944,11 @@ function resetToDefaults(){
 // Override createTiles to use admin questions AND load fresh from cloud
 function createTiles(levelNum){
   const container=document.getElementById('tileContainer');
-  container.innerHTML='';
   const level=levelQuestions[levelNum];
-  // Try to load latest questions from cloud first (async), then fall back to local
+
   const doCreate = (questions) => {
+    container.innerHTML='';
     gameState.currentLevelQuestions=questions;
-    // Update the level total to match actual active question count
     gameState.levelProgress[levelNum].total = questions.length;
     for(let i=0;i<questions.length;i++){
       const tile=document.createElement('div');
@@ -2895,7 +2959,10 @@ function createTiles(levelNum){
     }
     updateStats();
   };
-  // Load from cloud and refresh local cache, then render
+
+  // Show loading spinner while fetching from cloud
+  container.innerHTML=`<div style="grid-column:1/-1;text-align:center;padding:40px;font-size:1.3em;color:#4A90E2;font-weight:700;">⏳ Loading questions...</div>`;
+
   if(JBIN.apiKey && JBIN.questionsBin){
     loadQuestionsFromCloud().then(cloudQ => {
       if(cloudQ){
