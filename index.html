@@ -176,6 +176,28 @@ body{font-family:'Fredoka','Comic Sans MS',cursive;background:linear-gradient(18
 .submit-btn{width:100%;background:linear-gradient(135deg,#4CAF50,#45a049);border:6px solid #2E7D32;border-radius:20px;padding:18px;font-size:1.4em;font-weight:800;color:white;cursor:pointer;font-family:'Baloo 2',cursive;text-shadow:2px 2px 4px rgba(0,0,0,.4);box-shadow:0 8px 25px rgba(0,0,0,.3);transition:all .3s;}
 .submit-btn:hover:not(:disabled){transform:translateY(-5px);}
 .submit-btn:disabled{background:linear-gradient(135deg,#9E9E9E,#757575);border-color:#616161;cursor:not-allowed;opacity:.5;}
+.next-question-btn{
+  width:100%;margin-top:15px;
+  background:linear-gradient(135deg,#FF6B35,#E55A2B);
+  border:6px solid #C0392B;border-radius:20px;
+  padding:18px;font-size:1.4em;font-weight:800;color:white;
+  cursor:pointer;font-family:'Baloo 2',cursive;
+  text-shadow:2px 2px 4px rgba(0,0,0,.4);
+  box-shadow:0 8px 25px rgba(0,0,0,.3);
+  transition:all .3s;
+  animation:nextBtnPulse 1s infinite;
+}
+.next-question-btn:hover{transform:translateY(-4px) scale(1.02);}
+@keyframes nextBtnPulse{0%,100%{box-shadow:0 8px 25px rgba(255,107,53,.4);}50%{box-shadow:0 12px 35px rgba(255,107,53,.8);}}
+.exit-question-btn{
+  display:block;width:100%;margin-top:10px;
+  background:rgba(150,150,150,0.15);
+  border:3px solid #bbb;border-radius:15px;
+  padding:12px;font-size:1em;font-weight:700;color:#888;
+  cursor:pointer;font-family:'Baloo 2',cursive;
+  transition:all .3s;text-align:center;
+}
+.exit-question-btn:hover{background:rgba(231,76,60,.1);border-color:#E74C3C;color:#C0392B;}
 
 /* feedback */
 .feedback{margin-top:20px;padding:20px;border-radius:15px;border:5px solid;font-size:1.15em;line-height:1.8;animation:feedbackSlide .4s ease-out;}
@@ -1053,7 +1075,6 @@ body{font-family:'Fredoka','Comic Sans MS',cursive;background:linear-gradient(18
   <div class="task-card">
     <div class="card-header">
       <div class="card-title" id="modalTitle"></div>
-      <div class="close-btn" onclick="closeModal()">✕</div>
     </div>
     <div class="card-body">
       <div class="animation-section" id="animationSection">
@@ -1066,6 +1087,8 @@ body{font-family:'Fredoka','Comic Sans MS',cursive;background:linear-gradient(18
       <div class="options-container" id="optionsContainer"></div>
       <button class="submit-btn" id="submitBtn" onclick="submitAnswer()" disabled>SUBMIT ANSWER</button>
       <div id="feedbackContainer"></div>
+      <button class="next-question-btn" id="nextQuestionBtn" style="display:none;" onclick="nextQuestion()">➡️ NEXT QUESTION</button>
+      <button class="exit-question-btn" id="exitQuestionBtn" onclick="safeCloseModal()">✕ Exit to Board</button>
     </div>
   </div>
 </div>
@@ -2067,6 +2090,8 @@ function openTile(index){
   document.getElementById('submitBtn').disabled=true;
   document.getElementById('submitBtn').textContent='SUBMIT ANSWER';
   document.getElementById('submitBtn').onclick=submitAnswer;
+  document.getElementById('nextQuestionBtn').style.display='none';
+  document.getElementById('exitQuestionBtn').style.display='block';
   document.getElementById('taskModal').classList.add('active');
 }
 
@@ -2128,6 +2153,8 @@ function submitAnswer(){
   `;
   document.getElementById('feedbackContainer').appendChild(feedback);
 
+  document.getElementById('exitQuestionBtn').style.display='none';
+
   // AUTO voice explanation
   setTimeout(()=>{ speakText(speakExplanation); }, 400);
 
@@ -2140,6 +2167,15 @@ function submitAnswer(){
   setTimeout(()=>{
     tile.classList.add('completed');
     updateStats();
+    const p = gameState.levelProgress[gameState.currentLevel];
+    if(p.completed >= p.total){
+      document.getElementById('nextQuestionBtn').textContent = '🏆 SEE RESULTS';
+      document.getElementById('nextQuestionBtn').onclick = () => { sounds.click(); closeModal(); };
+    } else {
+      document.getElementById('nextQuestionBtn').textContent = '➡️ NEXT QUESTION';
+      document.getElementById('nextQuestionBtn').onclick = nextQuestion;
+    }
+    document.getElementById('nextQuestionBtn').style.display='block';
     checkLevelCompletion();
   },2800);
 
@@ -2203,6 +2239,21 @@ function closeModal(){
   stopAnimation();
   if(window.speechSynthesis) window.speechSynthesis.cancel();
   document.getElementById('taskModal').classList.remove('active');
+  document.getElementById('nextQuestionBtn').style.display='none';
+}
+
+function safeCloseModal(){
+  sounds.click();
+  const feedbackVisible = document.getElementById('feedbackContainer').innerHTML.trim() !== '';
+  if(!feedbackVisible){
+    if(!confirm('⚠️ Exit this question?\n\nYou haven\'t answered yet. Leaving will mark this tile as skipped.')) return;
+  }
+  closeModal();
+}
+
+function nextQuestion(){
+  sounds.click();
+  closeModal();
 }
 
 function showCompletionScreen(){
@@ -2291,8 +2342,11 @@ function downloadReport(){
 // Click outside to close
 window.onclick=function(e){
   if(e.target.classList.contains('modal')){
-    if(e.target.id==='taskModal')closeModal();
-    else if(e.target.id==='levelCompleteModal')document.getElementById('levelCompleteModal').classList.remove('active');
+    if(e.target.id==='taskModal'){
+      const feedbackVisible = document.getElementById('feedbackContainer').innerHTML.trim() !== '';
+      if(feedbackVisible){ closeModal(); }
+    }
+    else if(e.target.id==='levelCompleteModal') document.getElementById('levelCompleteModal').classList.remove('active');
   }
 };
 
