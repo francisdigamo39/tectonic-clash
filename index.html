@@ -1,30 +1,4 @@
 <!DOCTYPE html>
-<!--
-═══════════════════════════════════════════════════════════════════
- TECTONIC CLASH - Production Ready Edition
- 
- 🚀 Ready for deployment to:
-    • GitHub Pages
-    • Netlify  
-    • Vercel
-    • Any static hosting
-
- 👨‍🏫 Teacher Access: Password protected admin panel included
-    Default password: teacher2026 (change after deployment!)
- 
- 📱 Features:
-    • iOS/Android compatible
-    • Touch events supported
-    • Offline capable (with PWA files)
-    • Question management system
-    • Performance tracking
-    
- Version: 1.0.0
- Last Updated: March 2026
-═══════════════════════════════════════════════════════════════════
--->
-
-
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -685,15 +659,6 @@ body{font-family:'Fredoka','Comic Sans MS',cursive;background:linear-gradient(18
 @media(max-width:480px){.teacher-stats-row{grid-template-columns:repeat(2,1fr);}.teacher-header h1{font-size:1.3em;}}
 
 </style>
-
-<!-- PWA Configuration -->
-<link rel="manifest" href="./manifest.json">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Tectonic Clash">
-<link rel="apple-touch-icon" href="./icon-192.png">
-<link rel="icon" type="image/png" href="./icon-192.png">
-
 </head>
 <body>
 
@@ -2300,16 +2265,7 @@ function downloadReport(){
   sounds.click();
   const total=gameState.totalCorrect+gameState.totalIncorrect;
   const accuracy=total>0?Math.round((gameState.totalCorrect/total)*100):0;
-  let reportHTML=`<!DOCTYPE html><html><head><title>Tectonic Clash - Performance Report</title><style>body{font-family:Arial;max-width:800px;margin:40px auto;padding:20px;background:#f5f5f5;}.header{background:linear-gradient(135deg,#4A90E2,#357ABD);color:white;padding:30px;border-radius:10px;text-align:center;margin-bottom:30px;}.section{background:white;padding:25px;margin:20px 0;border-radius:10px;box-shadow:0 2px 10px rgba(0,0,0,.1);}h2{color:#4A90E2;border-bottom:3px solid #4A90E2;padding-bottom:10px;}table{width:100%;border-collapse:collapse;margin:20px 0;}th,td{padding:12px;text-align:left;border-bottom:1px solid #ddd;}th{background:#4A90E2;color:white;}.correct{color:#4CAF50;font-weight:bold;}.incorrect{color:#F44336;font-weight:bold;}</style>
-<!-- PWA Configuration -->
-<link rel="manifest" href="./manifest.json">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Tectonic Clash">
-<link rel="apple-touch-icon" href="./icon-192.png">
-<link rel="icon" type="image/png" href="./icon-192.png">
-
-</head><body><div class="header"><h1>🌍 TECTONIC CLASH 🌋</h1><h2 style="border:none;color:white;">Performance Report</h2><p style="font-size:1.2em;">Student: <strong>${gameState.playerName}</strong></p><p>Generated: ${new Date().toLocaleString()}</p></div><div class="section"><h2>📊 Overall Performance</h2><p><strong>Total Score:</strong> ${gameState.totalScore} points</p><p><strong>Correct:</strong> ${gameState.totalCorrect}</p><p><strong>Incorrect:</strong> ${gameState.totalIncorrect}</p><p><strong>Accuracy:</strong> ${accuracy}%</p></div><div class="section"><h2>📝 Detailed Results</h2><table><tr><th>Level</th><th>Tile</th><th>Question</th><th>Your Answer</th><th>Result</th></tr>`;
+  let reportHTML=`<!DOCTYPE html><html><head><title>Tectonic Clash - Performance Report</title><style>body{font-family:Arial;max-width:800px;margin:40px auto;padding:20px;background:#f5f5f5;}.header{background:linear-gradient(135deg,#4A90E2,#357ABD);color:white;padding:30px;border-radius:10px;text-align:center;margin-bottom:30px;}.section{background:white;padding:25px;margin:20px 0;border-radius:10px;box-shadow:0 2px 10px rgba(0,0,0,.1);}h2{color:#4A90E2;border-bottom:3px solid #4A90E2;padding-bottom:10px;}table{width:100%;border-collapse:collapse;margin:20px 0;}th,td{padding:12px;text-align:left;border-bottom:1px solid #ddd;}th{background:#4A90E2;color:white;}.correct{color:#4CAF50;font-weight:bold;}.incorrect{color:#F44336;font-weight:bold;}</style></head><body><div class="header"><h1>🌍 TECTONIC CLASH 🌋</h1><h2 style="border:none;color:white;">Performance Report</h2><p style="font-size:1.2em;">Student: <strong>${gameState.playerName}</strong></p><p>Generated: ${new Date().toLocaleString()}</p></div><div class="section"><h2>📊 Overall Performance</h2><p><strong>Total Score:</strong> ${gameState.totalScore} points</p><p><strong>Correct:</strong> ${gameState.totalCorrect}</p><p><strong>Incorrect:</strong> ${gameState.totalIncorrect}</p><p><strong>Accuracy:</strong> ${accuracy}%</p></div><div class="section"><h2>📝 Detailed Results</h2><table><tr><th>Level</th><th>Tile</th><th>Question</th><th>Your Answer</th><th>Result</th></tr>`;
   gameState.detailedResults.forEach(r=>{reportHTML+=`<tr><td>${r.level}</td><td>${r.tile}</td><td>${r.question.substring(0,60)}...</td><td>${r.selectedAnswer}</td><td class="${r.isCorrect?'correct':'incorrect'}">${r.isCorrect?'✅ Correct':'❌ Incorrect'}</td></tr>`;});
   reportHTML+=`</table></div><div class="section" style="text-align:center;"><h2>🎓 Final Assessment</h2><p style="font-size:1.5em;"><strong>${accuracy>=90?'OUTSTANDING!':accuracy>=75?'EXCELLENT!':accuracy>=60?'GOOD!':'KEEP LEARNING!'}</strong></p></div>
 
